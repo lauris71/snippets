@@ -98,10 +98,10 @@ ge_64(uint64_t a, uint64_t b) {
  * 
  * It always iterates lhs_len steps so use lhs for public input and rhs for secret.
  * 
- * @param lhs The first string
- * @param lhs_len Length of the first (public) string
- * @param rhs The second string
- * @param rhs_len Length of the second (secret) string
+ * @param lhs The first (public) string
+ * @param lhs_len Length of the first string
+ * @param rhs The second (secret) string
+ * @param rhs_len Length of the second string
  * @return 0xff if strings are equal, 0x00 otherwise
  */
 uint8_t
@@ -112,7 +112,8 @@ ct_strncmp(const uint8_t *lhs, uint64_t lhs_len, const uint8_t *rhs, uint64_t rh
     uint64_t replace = ct_zero64(rhs_len) & 1;
     uint64_t keep = replace ^ 1;
     /* Replace rhs with rhs_p if rhs_len == 0 */
-    rhs = (const uint8_t *)  ((uint64_t) rhs * keep + (uint64_t) rhs_p * replace);
+    /* This expects pointers to be interchangeable with 64-bit integers, use macros if this is not the case */
+    rhs = (const uint8_t *) ((uint64_t) rhs * keep + (uint64_t) rhs_p * replace);
 
     /* 0xff if lengths are equal, 0x00 otherwise */
     uint8_t result = (uint8_t) (ct_eq64(lhs_len, rhs_len) & 0xff);
@@ -120,7 +121,7 @@ ct_strncmp(const uint8_t *lhs, uint64_t lhs_len, const uint8_t *rhs, uint64_t rh
     for (uint64_t i = 0; i < lhs_len; i++) {
         /* Use rhs[0] if i >= rhs_len */
         /* This is safe because we have already put length equality to result */
-        uint64_t lt = ge_64(i, rhs_len) ^ UINT64_MAX;
+        uint64_t lt = ((ge_64(i, rhs_len) & 1) * UINT64_MAX) ^ UINT64_MAX;
         uint64_t j = i & lt;
         result &= ct_eq8(lhs[i], rhs[j]);
     }
