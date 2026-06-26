@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /**
  * @brief Check if an 8-bit value is zero.
@@ -78,9 +79,18 @@ ct_eq64(uint64_t a, uint64_t b) {
  */
 uint8_t
 ge_64(uint64_t a, uint64_t b) {
-    /* (b - a - 1) wraps to a huge value when a >= b, putting 1 in the top bit */
-    uint64_t top_bit = (b - a - 1u) >> 63;     /* 1 if a < b, 0 if a >= b */
-    return (uint8_t) (top_bit * 0xFFu);
+    /* The idea is to find the difference and check high bit */
+    /* But first we have to handle the cases when the high bits are set */
+    uint8_t msb_a = (a >> 63) & 1;
+    uint8_t msb_b = (b >> 63) & 1;
+    /* If MSB(a) == 1 && MSB(b) == 0, then a > b */
+    uint8_t msb_10 = (msb_a & 1) & (msb_b ^ 1);
+    /* If MSB(a) == 0 && MSB(b) == 1, then a < b */
+    uint8_t msb_01 = (msb_a ^ 1) & (msb_b & 1);
+    /* if MSB-s are equal then (b - a - 1) wraps to a huge value when a >= b, putting 1 in the top bit */
+    uint8_t diff_top = ((b - a - 1u) >> 63) & 0xff;
+    uint8_t ge = msb_10 | ((msb_01 ^ 1) & diff_top);
+    return (uint8_t) (ge * 0xFFu);
 }
 
 /**
@@ -122,7 +132,7 @@ ct_strncmp(const uint8_t *lhs, uint64_t lhs_len, const uint8_t *rhs, uint64_t rh
 static void
 compare(const char *lhs, uint64_t lhs_len, const char *rhs, uint64_t rhs_len)
 {
-    fprintf(stdout, "LHS: \"");
+    fprintf(stdout, "\nLHS: \"");
     for (uint64_t i = 0; i < lhs_len; i++) fprintf(stdout, "%c", lhs[i]);
     fprintf(stdout, "\"\n");
     fprintf(stdout, "RHS: \"");
@@ -135,6 +145,20 @@ compare(const char *lhs, uint64_t lhs_len, const char *rhs, uint64_t rhs_len)
 int
 main(void)
 {
+    for (unsigned int i = 0; i < 100000; i++) {
+        uint64_t lhs = 0;
+        uint64_t rhs = 0;
+        for (unsigned int j = 0; j < 8; j++) {
+            lhs = (lhs << 8) | (uint64_t)(rand() & 0xff);
+            rhs = (rhs << 8) | (uint64_t)(rand() & 0xff);
+        }
+        unsigned int ge = (lhs >= rhs);
+        uint8_t ct_ge = ge_64(lhs, rhs);
+        if (ge != (ct_ge == 0xff)) {
+            fprintf(stderr, "Mismatch at iteration %u: lhs=%016llx, rhs=%016llx, ge=%u, ct_ge=%02x\n",
+                    i, lhs, rhs, ge, ct_ge);
+        }
+    }
     const char *a = "HonoluluHonoluluHonoluluHonolulu";
     const char *b = "ShanghaiShanghaiShanghaiShanghai";
 
@@ -150,6 +174,5 @@ main(void)
     compare(a, 32, b, 0);
     compare(a, 0, b, 32);
     compare(a, 0, b, 0);
-
     return 0;
 }
