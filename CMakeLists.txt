@@ -9,3 +9,4 @@ PROJECT(snippets)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 add_subdirectory(hex2int)
+add_subdirectory(constant-time)

@@ -6,3 +6,7 @@ Here you can find small interesting and/or useful code snippets that do not dese
 
 A conditional and array free hex digit to decimal value converter. Accepts both upper (A..F) and lower (a..f) letters.
 Return -1 for non-hexadecimal digits.
+
+## Constant-time comparison
+
+Branch-free (constant-time) comparison of values and strings
