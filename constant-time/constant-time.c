@@ -1,6 +1,7 @@
 #define __CONSTANT_TIME_C__
 
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -112,8 +113,7 @@ ct_strncmp(const uint8_t *lhs, uint64_t lhs_len, const uint8_t *rhs, uint64_t rh
     uint64_t replace = ct_zero64(rhs_len) & 1;
     uint64_t keep = replace ^ 1;
     /* Replace rhs with rhs_p if rhs_len == 0 */
-    /* This expects pointers to be interchangeable with 64-bit integers, use macros if this is not the case */
-    rhs = (const uint8_t *) ((uint64_t) rhs * keep + (uint64_t) rhs_p * replace);
+    rhs = (const uint8_t *) ((uintptr_t) rhs * keep + (uintptr_t) rhs_p * replace);
 
     /* 0xff if lengths are equal, 0x00 otherwise */
     uint8_t result = (uint8_t) (ct_eq64(lhs_len, rhs_len) & 0xff);

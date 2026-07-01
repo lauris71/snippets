@@ -27,4 +27,6 @@ Compares two 64-bit unsigned integers. Returns `0xff` if the first is greater th
 ### `ct_strncmp`
 Compares two strings for equality in constant time. Returns `0xff` if the strings are equal, `0x00` otherwise.
 
-Always perform `lhs_len` steps regardless of the length of `rhs`. So if used to compare a known string to a secret string, use `lhs` for the known string.
+Always perform `lhs_len` steps (and reads all bytes from `lhs` regardless of the length of `rhs`. So if used to compare a known string to a secret string, use `lhs` for the known string.
+
+There is still a slight possibility of leaking the length of the second string (`rhs`) through cache latency. This cannot be solved at this specific point but should be handled by enforcing specific rules to the secret string storage and length.
